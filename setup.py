@@ -16,6 +16,7 @@ setup(
     entry_points={
         "console_scripts": [
             "operate=operate.main:main_entry",
+            "operate-gemini-mcp=operate.cli.gemini_agent:main",
         ],
     },
     package_data={
