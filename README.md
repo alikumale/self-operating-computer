@@ -37,7 +37,7 @@ pip install self-operating-computer
 ```
 operate
 ```
-3. **Enter your OpenAI Key**: If you don't have one, you can obtain an OpenAI key [here](https://platform.openai.com/account/api-keys). If you need you change your key at a later point, run `vim .env` to open the `.env` and replace the old key. 
+3. **Enter your OpenAI Key**: If you don't have one, you can obtain an OpenAI key [here](https://platform.openai.com/account/api-keys). If you need you change your key at a later point, run `vim .env` to open the `.env` and replace the old key.
 
 <div align="center">
   <img src="https://github.com/OthersideAI/self-operating-computer/blob/main/readme/key.png" width="300"  style="margin: 10px;"/>
@@ -49,6 +49,51 @@ operate
   <img src="https://github.com/OthersideAI/self-operating-computer/blob/main/readme/terminal-access-1.png" width="300"  style="margin: 10px;"/>
   <img src="https://github.com/OthersideAI/self-operating-computer/blob/main/readme/terminal-access-2.png" width="300"  style="margin: 10px;"/>
 </div>
+
+## Windows quickstart (Python-only)
+
+1. Install **Python 3.11+** from the [official download page](https://www.python.org/downloads/windows/) and make sure `python` is available in your PATH.
+2. Open **PowerShell** and clone the project (or install from PyPI if you just need the CLI):
+   ```powershell
+   git clone https://github.com/alikumale/self-operating-computer.git
+   cd self-operating-computer
+   # Optional: instead of cloning, you can also install the published wheel
+   # pip install self-operating-computer
+   ```
+3. Create and activate a virtual environment (recommended for both the clone and PyPI install):
+   ```powershell
+   py -3 -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   python -m pip install --upgrade pip
+   ```
+4. Install the dependencies with Windows-safe markers (no manual C/C++ builds required):
+   ```powershell
+   pip install -r requirements.txt
+   ```
+5. Copy the provided environment template and add your API keys:
+   ```powershell
+   copy .env.example .env
+   ```
+6. Run the CLI or GUI launcher:
+   ```powershell
+   operate --model gpt-4-with-ocr --prompt "open github.com and sign in"
+   # or
+   python -m operate.gui
+   ```
+
+The requirements file uses environment markers to avoid platform-specific packages (e.g., `python3-xlib` on Linux, `rubicon-objc` on macOS) so Windows users only install the wheels they need.
+
+## OpenRouter configuration
+
+You can run the framework through [OpenRouter](https://openrouter.ai/) to avoid managing multiple vendor SDKs.
+
+1. Copy the template and add your API key and desired model route:
+   ```powershell
+   copy .env.example .env
+   # Set OPENROUTER_API_KEY (or OPENAI_API_KEY), OPENAI_BASE_URL, and LLM_MODEL_NAME
+   # e.g., LLM_MODEL_NAME=google/gemini-2.5-flash
+   ```
+2. When `OPENROUTER_API_KEY` is present, the OpenRouter base URL (`OPENAI_BASE_URL`) and `LLM_MODEL_NAME` are used automatically for OpenAI-compatible calls (including evaluation). You can still override the model per run with `--model`.
 
 ## Using `operate` Modes
 
@@ -115,7 +160,7 @@ operate -m llava
 Learn more about Ollama at its [GitHub Repository](https://www.github.com/ollama/ollama)
 
 ### Voice Mode `--voice`
-The framework supports voice inputs for the objective. Try voice by following the instructions below. 
+The framework supports voice inputs for the objective. Try voice by following the instructions below.
 **Clone the repo** to a directory on your computer:
 ```
 git clone https://github.com/OthersideAI/self-operating-computer.git
@@ -141,6 +186,16 @@ Run with voice mode
 ```
 operate --voice
 ```
+
+### Simple GUI launcher
+
+If you prefer a point-and-click interface for daily tasks, use the built-in Tkinter wrapper (works on Windows, macOS, and Linux):
+
+```bash
+python -m operate.gui
+```
+
+Enter your objective, pick the model, and click **Start** to launch the existing `operate` flow without retyping prompts in the terminal.
 
 ### Optical Character Recognition Mode `-m gpt-4-with-ocr`
 The Self-Operating Computer Framework now integrates Optical Character Recognition (OCR) capabilities with the `gpt-4-with-ocr` mode. This mode gives GPT-4 a hash map of clickable elements by coordinates. GPT-4 can decide to `click` elements by text and then the code references the hash map to get the coordinates for that element GPT-4 wanted to click. 
