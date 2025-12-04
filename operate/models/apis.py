@@ -106,7 +106,7 @@ def call_gpt_4o(messages):
         messages.append(vision_message)
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=config.resolve_openai_model("gpt-4o"),
             messages=messages,
             presence_penalty=1,
             frequency_penalty=1,
@@ -350,7 +350,7 @@ async def call_gpt_4o_with_ocr(messages, objective, model):
         messages.append(vision_message)
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=config.resolve_openai_model("gpt-4o"),
             messages=messages,
         )
 
@@ -461,7 +461,7 @@ async def call_gpt_4_1_with_ocr(messages, objective, model):
         messages.append(vision_message)
 
         response = client.chat.completions.create(
-            model="gpt-4.1",
+            model=config.resolve_openai_model("gpt-4.1"),
             messages=messages,
         )
 
@@ -569,7 +569,7 @@ async def call_o1_with_ocr(messages, objective, model):
         messages.append(vision_message)
 
         response = client.chat.completions.create(
-            model="o1",
+            model=config.resolve_openai_model("o1"),
             messages=messages,
         )
 
@@ -691,7 +691,7 @@ async def call_gpt_4o_labeled(messages, objective, model):
         messages.append(vision_message)
 
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=config.resolve_openai_model("gpt-4o"),
             messages=messages,
             presence_penalty=1,
             frequency_penalty=1,

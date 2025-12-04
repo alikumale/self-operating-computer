@@ -34,6 +34,10 @@ class Config:
         self.openai_api_key = (
             None  # instance variables are backups in case saving to a `.env` fails
         )
+        self.openrouter_api_key = (
+            None  # instance variables are backups in case saving to a `.env` fails
+        )
+        self.preferred_model = os.getenv("LLM_MODEL_NAME")
         self.google_api_key = (
             None  # instance variables are backups in case saving to a `.env` fails
         )
@@ -51,22 +55,23 @@ class Config:
         if self.verbose:
             print("[Config][initialize_openai]")
 
-        if self.openai_api_key:
-            if self.verbose:
-                print("[Config][initialize_openai] using cached openai_api_key")
-            api_key = self.openai_api_key
-        else:
-            if self.verbose:
-                print(
-                    "[Config][initialize_openai] no cached openai_api_key, try to get from env."
-                )
-            api_key = os.getenv("OPENAI_API_KEY")
+        base_url = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+        api_key = os.getenv("OPENAI_API_KEY") or self.openai_api_key
+        openrouter_api_key = os.getenv("OPENROUTER_API_KEY") or self.openrouter_api_key
+
+        api_key = api_key or openrouter_api_key
+
+        if not api_key:
+            raise RuntimeError(
+                "Set OPENAI_API_KEY or OPENROUTER_API_KEY to initialize the OpenAI client."
+            )
 
         client = OpenAI(
+            base_url=base_url,
             api_key=api_key,
         )
         client.api_key = api_key
-        client.base_url = os.getenv("OPENAI_API_BASE_URL", client.base_url)
+        client.base_url = base_url
         return client
 
     def initialize_qwen(self):
@@ -135,13 +140,25 @@ class Config:
         self.require_api_key(
             "OPENAI_API_KEY",
             "OpenAI API key",
+            (model == "gpt-4"
+            or voice_mode
+            or model == "gpt-4-with-som"
+            or model == "gpt-4-with-ocr"
+            or model == "gpt-4.1-with-ocr"
+            or model == "o1-with-ocr")
+            and not self.has_openrouter_key(),
+        )
+        if (
             model == "gpt-4"
             or voice_mode
             or model == "gpt-4-with-som"
             or model == "gpt-4-with-ocr"
             or model == "gpt-4.1-with-ocr"
-            or model == "o1-with-ocr",
-        )
+            or model == "o1-with-ocr"
+        ) and not self.has_openai_key():
+            self.require_api_key(
+                "OPENROUTER_API_KEY", "OpenRouter API key", True
+            )
         self.require_api_key(
             "GOOGLE_API_KEY", "Google API key", model == "gemini-pro-vision"
         )
@@ -171,6 +188,8 @@ class Config:
         if key_value:
             if key_name == "OPENAI_API_KEY":
                 self.openai_api_key = key_value
+            elif key_name == "OPENROUTER_API_KEY":
+                self.openrouter_api_key = key_value
             elif key_name == "GOOGLE_API_KEY":
                 self.google_api_key = key_value
             elif key_name == "ANTHROPIC_API_KEY":
@@ -185,3 +204,15 @@ class Config:
     def save_api_key_to_env(key_name, key_value):
         with open(".env", "a") as file:
             file.write(f"\n{key_name}='{key_value}'")
+
+    def has_openai_key(self):
+        return bool(self.openai_api_key or os.environ.get("OPENAI_API_KEY"))
+
+    def has_openrouter_key(self):
+        return bool(self.openrouter_api_key or os.environ.get("OPENROUTER_API_KEY"))
+
+    def resolve_openai_model(self, default_model: str = "google/gemini-2.5-flash"):
+        model = self.preferred_model or os.getenv("LLM_MODEL_NAME")
+        if model:
+            return model
+        return default_model
