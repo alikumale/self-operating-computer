@@ -1,12 +1,29 @@
+import json
 import os
 import sys
+from pathlib import Path
 
+import anthropic
 import google.generativeai as genai
 from dotenv import load_dotenv
 from ollama import Client
 from openai import OpenAI
-import anthropic
 from prompt_toolkit.shortcuts import input_dialog
+
+
+CONFIG_PATH = Path.cwd() / "config.json"
+
+
+def _load_local_settings() -> dict:
+    """Load configuration values from the shared JSON config if it exists."""
+
+    if CONFIG_PATH.exists():
+        try:
+            return json.loads(CONFIG_PATH.read_text())
+        except Exception:
+            # Fall back silently to environment defaults if the config is invalid
+            return {}
+    return {}
 
 
 class Config:
@@ -30,6 +47,8 @@ class Config:
 
     def __init__(self):
         load_dotenv()
+        config_values = _load_local_settings()
+        self.local_settings = config_values
         self.verbose = False
         self.openai_api_key = (
             None  # instance variables are backups in case saving to a `.env` fails
@@ -37,7 +56,9 @@ class Config:
         self.openrouter_api_key = (
             None  # instance variables are backups in case saving to a `.env` fails
         )
-        self.preferred_model = os.getenv("LLM_MODEL_NAME")
+        self.preferred_model = config_values.get("llm_model_name") or os.getenv(
+            "LLM_MODEL_NAME"
+        )
         self.google_api_key = (
             None  # instance variables are backups in case saving to a `.env` fails
         )
@@ -56,8 +77,16 @@ class Config:
             print("[Config][initialize_openai]")
 
         base_url = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
-        api_key = os.getenv("OPENAI_API_KEY") or self.openai_api_key
-        openrouter_api_key = os.getenv("OPENROUTER_API_KEY") or self.openrouter_api_key
+        api_key = (
+            self.local_settings.get("api_key")
+            or os.getenv("OPENAI_API_KEY")
+            or self.openai_api_key
+        )
+        openrouter_api_key = (
+            self.local_settings.get("api_key")
+            or os.getenv("OPENROUTER_API_KEY")
+            or self.openrouter_api_key
+        )
 
         api_key = api_key or openrouter_api_key
 
@@ -206,13 +235,23 @@ class Config:
             file.write(f"\n{key_name}='{key_value}'")
 
     def has_openai_key(self):
-        return bool(self.openai_api_key or os.environ.get("OPENAI_API_KEY"))
+        return bool(
+            self.local_settings.get("api_key")
+            or self.openai_api_key
+            or os.environ.get("OPENAI_API_KEY")
+        )
 
     def has_openrouter_key(self):
-        return bool(self.openrouter_api_key or os.environ.get("OPENROUTER_API_KEY"))
+        return bool(
+            self.local_settings.get("api_key")
+            or self.openrouter_api_key
+            or os.environ.get("OPENROUTER_API_KEY")
+        )
 
     def resolve_openai_model(self, default_model: str = "google/gemini-2.5-flash"):
-        model = self.preferred_model or os.getenv("LLM_MODEL_NAME")
-        if model:
-            return model
-        return default_model
+        model = (
+            self.preferred_model
+            or self.local_settings.get("llm_model_name")
+            or os.getenv("LLM_MODEL_NAME")
+        )
+        return model or default_model
