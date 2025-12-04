@@ -52,7 +52,7 @@ operate
 
 ## Windows quickstart (Python-only)
 
-1. Install **Python 3.11 (64-bit)** from the [official download page](https://www.python.org/downloads/windows/) and check "Add Python to PATH". Versions 3.10–3.12 work; others will show a warning.
+1. Install **Python 3.11+** from the [official download page](https://www.python.org/downloads/windows/) and make sure `python` is available in your PATH.
 2. Open **PowerShell** and clone the project (or install from PyPI if you just need the CLI):
    ```powershell
    git clone https://github.com/alikumale/self-operating-computer.git
