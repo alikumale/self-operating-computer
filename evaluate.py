@@ -1,11 +1,12 @@
-import sys
-import os
-import subprocess
-import platform
+import argparse
 import base64
 import json
-import openai
-import argparse
+import os
+import platform
+import subprocess
+import sys
+
+from openai import OpenAI
 
 from dotenv import load_dotenv
 
@@ -26,6 +27,7 @@ Guideline: {guideline}
 """
 
 SCREENSHOT_PATH = os.path.join("screenshots", "screenshot.png")
+CLIENT = None
 
 
 # Check if on a windows terminal that supports ANSI escape codes
@@ -85,6 +87,22 @@ def parse_eval_content(content):
         exit(1)
 
 
+def resolve_eval_model(default_model="google/gemini-2.5-flash"):
+    return os.getenv("LLM_MODEL_NAME", default_model)
+
+
+def get_completion_client():
+    api_key = os.getenv("OPENAI_API_KEY") or os.getenv("OPENROUTER_API_KEY")
+    base_url = os.getenv("OPENAI_BASE_URL", "https://openrouter.ai/api/v1")
+
+    if not api_key:
+        raise RuntimeError(
+            "Set OPENAI_API_KEY or OPENROUTER_API_KEY before running evaluation."
+        )
+
+    return OpenAI(api_key=api_key, base_url=base_url)
+
+
 def evaluate_final_screenshot(guideline):
     """Load the final screenshot and return True or False if it meets the given guideline."""
     with open(SCREENSHOT_PATH, "rb") as img_file:
@@ -103,8 +121,8 @@ def evaluate_final_screenshot(guideline):
             }
         ]
 
-        response = openai.chat.completions.create(
-            model="gpt-4o",
+        response = CLIENT.chat.completions.create(
+            model=resolve_eval_model(),
             messages=eval_message,
             presence_penalty=1,
             frequency_penalty=1,
@@ -150,8 +168,9 @@ def get_test_model():
 
 
 def main():
+    global CLIENT
     load_dotenv()
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    CLIENT = get_completion_client()
 
     model = get_test_model()
 
