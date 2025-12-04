@@ -28,6 +28,10 @@ Follow these PowerShell commands to reproduce the local setup:
 # 6) Launch the task runner GUI
 #   The first launch prompts you to set a password; later launches ask for it.
 #   Settings (model, API key, voice, delays, startup preference) are stored in config.json (ignored by git).
+# 6) Launch the simple GUI task runner
+ # Ensure your environment variables are set, e.g.:
+ #   set OPENROUTER_API_KEY=your_key_here
+ #   set LLM_MODEL_NAME=google/gemini-2.5-flash
  python task_runner.py
 ```
 
