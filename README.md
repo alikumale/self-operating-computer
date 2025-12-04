@@ -60,25 +60,26 @@ operate
    # Optional: instead of cloning, you can also install the published wheel
    # pip install self-operating-computer
    ```
-3. Create and activate a virtual environment (recommended for both the clone and PyPI install):
+3. Create and activate a virtual environment with Python 3.11:
    ```powershell
-   py -3 -m venv .venv
+   py -3.11 -m venv .venv
    .\.venv\Scripts\Activate.ps1
    python -m pip install --upgrade pip
    ```
-4. Install the dependencies with Windows-safe markers (no manual C/C++ builds required):
+4. Install dependencies (no manual C/C++ builds required):
    ```powershell
    pip install -r requirements.txt
+   # If you want the console script directly, also run:
+   # pip install self-operating-computer
    ```
-5. Copy the provided environment template and add your API keys:
+5. Configure and run:
    ```powershell
-   copy .env.example .env
-   ```
-6. Run the CLI or GUI launcher:
-   ```powershell
-   operate --model gpt-4-with-ocr --prompt "open github.com and sign in"
-   # or
-   python -m operate.gui
+   # Launch the GUI once to save model, API key, voice, and delay into config.json (git-ignored)
+   python task_runner.py
+
+   # Quick checks
+   operate --help
+   python task_runner.py
    ```
 
 The requirements file uses environment markers to avoid platform-specific packages (e.g., `python3-xlib` on Linux, `rubicon-objc` on macOS) so Windows users only install the wheels they need.

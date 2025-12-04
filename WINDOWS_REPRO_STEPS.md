@@ -1,35 +1,35 @@
-# Windows Reproduction Steps
+# Windows Reproduction Steps (Python 3.11 recommended)
 
-Follow these PowerShell commands to reproduce the local setup:
+Follow these PowerShell commands on Windows 10/11 for a clean setup:
 
 ```powershell
 # 1) Clone the repository
  git clone https://github.com/alikumale/self-operating-computer.git
  cd self-operating-computer
- # Or skip cloning and install the published wheel:
+
+# 2) Create and activate a Python 3.11 virtual environment
+ py -3.11 -m venv .venv
+ .\.venv\Scripts\Activate.ps1  # or .\.venv\Scripts\activate
+
+# 3) Upgrade pip and install dependencies
+ python -m pip install --upgrade pip
+ pip install -r requirements.txt
+ # If you need the console script directly, also run:
  # pip install self-operating-computer
 
-# 2) Create and activate a virtual environment
- py -3 -m venv .venv
- .\.venv\Scripts\Activate.ps1
+# 4) Configure your model/key and run
+ # Launch the GUI to save settings (model, API key, voice, delay) into config.json
+ python task_runner.py
 
-# 3) Install the package and dependencies (Python-only install)
- pip install .
+# Optional: use the convenience script
+ # .\scripts\setup_windows.ps1
 
-# 4) Add your OpenRouter/OpenAI settings (creates .env)
- copy .env.example .env
-# Edit .env and set OPENROUTER_API_KEY, OPENAI_BASE_URL, and LLM_MODEL_NAME as needed
-
-# 5) Smoke-test the CLI (headless-safe) or run a simple objective
- python -m operate.cli.gemini_agent --help
-# Example headless-safe run using the configured LLM model name
- operate -m $env:LLM_MODEL_NAME --objective "Say hello and then exit."
-
-# 6) Launch the simple GUI task runner
- # Ensure your environment variables are set, e.g.:
- #   set OPENROUTER_API_KEY=your_key_here
- #   set LLM_MODEL_NAME=google/gemini-2.5-flash
+# 5) Quick checks
+ operate --help
  python task_runner.py
 ```
 
-> Note: The `operate` CLI requires access to a GUI/Display because it imports `pyautogui`. In a headless shell you can still verify the install with the Gemini MCP helper command above.
+Notes:
+- Settings (including API key and model) are stored locally in `config.json`, which is git-ignored.
+- The GUI requires a display; running it in a headless shell will raise a Tkinter display error.
+- The project is tested with Python 3.11; versions 3.10–3.12 should work. Older/newer versions will show a warning only.
