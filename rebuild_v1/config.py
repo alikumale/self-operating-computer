@@ -5,21 +5,16 @@ from typing import Any, Dict
 CONFIG_PATH = Path(__file__).parent / "config.json"
 
 DEFAULT_CONFIG: Dict[str, Any] = {
-    "provider_mode": "Ollama (Local Text)",
+    "provider": "Ollama (Local)",
     "ollama_host": "http://localhost:11434",
-    "ollama_text_model": "llama3.2:3b",
-    "ollama_vision_model": "llava:7b",
+    "ollama_model": "llama3.2:3b",
     "openrouter_api_key": "",
     "openrouter_model": "openrouter/auto",
     "openrouter_base_url": "https://openrouter.ai/api/v1",
-    "llm_timeout_seconds": 600,
-    "max_steps": 20,
+    "max_steps": 10,
     "delay_seconds": 0.6,
     "stop_hotkey": "ctrl+alt+s",
     "dry_run": True,
-    "confirm_before_execute": True,
-    "block_clicks": True,
-    "block_terminal_typing": True,
 }
 
 
@@ -28,11 +23,9 @@ def load_config() -> Dict[str, Any]:
         try:
             with CONFIG_PATH.open("r", encoding="utf-8") as f:
                 data = json.load(f)
-            merged = DEFAULT_CONFIG.copy()
-            if isinstance(data, dict):
-                merged.update(data)
+            merged = {**DEFAULT_CONFIG, **data}
             return merged
-        except (json.JSONDecodeError, OSError, TypeError):
+        except (json.JSONDecodeError, OSError):
             return DEFAULT_CONFIG.copy()
     return DEFAULT_CONFIG.copy()
 

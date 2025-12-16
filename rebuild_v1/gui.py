@@ -13,20 +13,16 @@ class AppGUI:
         run_callback: Callable[[List[str]], None],
         stop_callback: Callable[[], None],
         log_export: Callable[[Callable[[str], None]], None],
-        test_llm_callback: Callable[[], None],
-        test_screenshot_callback: Callable[[], None],
     ):
         self.root = root
         self.run_callback = run_callback
         self.stop_callback = stop_callback
         self.log_export = log_export
-        self.test_llm_callback = test_llm_callback
-        self.test_screenshot_callback = test_screenshot_callback
         self.config = load_config()
         self.tasks: List[str] = []
 
         root.title("Self-Operating Computer v1")
-        root.geometry("900x620")
+        root.geometry("760x520")
 
         notebook = ttk.Notebook(root)
         notebook.pack(fill=tk.BOTH, expand=True)
@@ -63,120 +59,63 @@ class AppGUI:
             side=tk.LEFT, padx=4
         )
 
-        safety_frame = ttk.LabelFrame(frame, text="Safety")
-        safety_frame.pack(fill=tk.X, padx=8, pady=6)
-
         self.dry_run_var = tk.BooleanVar(value=bool(self.config.get("dry_run", True)))
-        ttk.Checkbutton(
-            safety_frame,
+        dry_run_check = ttk.Checkbutton(
+            frame,
             text="Dry Run (do not execute actions)",
             variable=self.dry_run_var,
             command=self._persist_dry_run,
-        ).pack(anchor=tk.W, padx=6, pady=2)
-
-        self.confirm_var = tk.BooleanVar(
-            value=bool(self.config.get("confirm_before_execute", True))
         )
-        ttk.Checkbutton(
-            safety_frame,
-            text="Confirm Before Execute",
-            variable=self.confirm_var,
-            command=self._persist_confirm,
-        ).pack(anchor=tk.W, padx=6, pady=2)
-
-        self.block_clicks_var = tk.BooleanVar(value=bool(self.config.get("block_clicks", True)))
-        ttk.Checkbutton(
-            safety_frame,
-            text="Block Click Actions",
-            variable=self.block_clicks_var,
-            command=self._persist_block_clicks,
-        ).pack(anchor=tk.W, padx=6, pady=2)
-
-        self.block_terminal_var = tk.BooleanVar(
-            value=bool(self.config.get("block_terminal_typing", True))
-        )
-        ttk.Checkbutton(
-            safety_frame,
-            text="Block Typing In Terminals",
-            variable=self.block_terminal_var,
-            command=self._persist_block_terminal,
-        ).pack(anchor=tk.W, padx=6, pady=2)
+        dry_run_check.pack(anchor=tk.W, padx=8, pady=4)
 
         ttk.Label(frame, text="Task Queue").pack(anchor=tk.W, padx=8, pady=(10, 2))
-        self.tasks_list = tk.Listbox(frame, height=10)
+        self.tasks_list = tk.Listbox(frame, height=8)
         self.tasks_list.pack(fill=tk.BOTH, expand=True, padx=8, pady=(0, 8))
 
     def _build_settings_tab(self, notebook: ttk.Notebook) -> None:
         frame = ttk.Frame(notebook)
         notebook.add(frame, text="Settings")
 
-        provider_frame = ttk.LabelFrame(frame, text="Provider")
+        provider_frame = ttk.Frame(frame)
         provider_frame.pack(fill=tk.X, padx=8, pady=6)
-        ttk.Label(provider_frame, text="Provider Mode").pack(anchor=tk.W)
-        self.provider_var = tk.StringVar(
-            value=str(self.config.get("provider_mode", "Ollama (Local Text)"))
-        )
+        ttk.Label(provider_frame, text="Provider").pack(anchor=tk.W)
+        self.provider_var = tk.StringVar(value=str(self.config.get("provider", "Ollama (Local)")))
         provider_menu = ttk.Combobox(
             provider_frame,
             textvariable=self.provider_var,
-            values=[
-                "Ollama (Local Text)",
-                "Ollama (Local Vision)",
-                "OpenRouter (API)",
-            ],
+            values=["Ollama (Local)", "OpenRouter (API)"],
             state="readonly",
         )
         provider_menu.pack(fill=tk.X, pady=2)
         provider_menu.bind("<<ComboboxSelected>>", lambda _event: self._toggle_provider_fields())
 
         self.ollama_host_var = tk.StringVar(value=str(self.config.get("ollama_host")))
-        self.ollama_text_model_var = tk.StringVar(
-            value=str(self.config.get("ollama_text_model"))
-        )
-        self.ollama_vision_model_var = tk.StringVar(
-            value=str(self.config.get("ollama_vision_model"))
-        )
+        self.ollama_model_var = tk.StringVar(value=str(self.config.get("ollama_model")))
         self.openrouter_key_var = tk.StringVar(value=str(self.config.get("openrouter_api_key")))
         self.openrouter_model_var = tk.StringVar(value=str(self.config.get("openrouter_model")))
-        self.openrouter_base_var = tk.StringVar(
-            value=str(self.config.get("openrouter_base_url"))
-        )
+        self.openrouter_base_var = tk.StringVar(value=str(self.config.get("openrouter_base_url")))
 
-        self.provider_container = ttk.Frame(provider_frame)
-        self.provider_container.pack(fill=tk.X, padx=4, pady=4)
+        self.provider_container = ttk.Frame(frame)
+        self.provider_container.pack(fill=tk.X, padx=8, pady=4)
         self._build_provider_fields()
 
-        extras = ttk.LabelFrame(frame, text="Run Settings")
+        extras = ttk.Frame(frame)
         extras.pack(fill=tk.X, padx=8, pady=6)
 
-        ttk.Label(extras, text="LLM Timeout Seconds").pack(anchor=tk.W)
-        self.timeout_var = tk.IntVar(value=int(self.config.get("llm_timeout_seconds", 600)))
-        ttk.Entry(extras, textvariable=self.timeout_var).pack(fill=tk.X, pady=2)
-
-        ttk.Label(extras, text="Max steps").pack(anchor=tk.W, pady=(6, 0))
-        self.max_steps_var = tk.IntVar(value=int(self.config.get("max_steps", 20)))
+        ttk.Label(extras, text="Max steps").pack(anchor=tk.W)
+        self.max_steps_var = tk.IntVar(value=int(self.config.get("max_steps", 10)))
         ttk.Entry(extras, textvariable=self.max_steps_var).pack(fill=tk.X, pady=2)
 
-        ttk.Label(extras, text="Delay between actions (seconds)").pack(anchor=tk.W, pady=(6, 0))
+        ttk.Label(extras, text="Delay between actions (seconds)").pack(anchor=tk.W, pady=(8, 0))
         self.delay_var = tk.DoubleVar(value=float(self.config.get("delay_seconds", 0.6)))
         ttk.Entry(extras, textvariable=self.delay_var).pack(fill=tk.X, pady=2)
 
-        ttk.Label(extras, text="Stop hotkey (e.g., ctrl+alt+s)").pack(anchor=tk.W, pady=(6, 0))
-        self.stop_hotkey_var = tk.StringVar(
-            value=str(self.config.get("stop_hotkey", "ctrl+alt+s"))
-        )
+        ttk.Label(extras, text="Stop hotkey (e.g., ctrl+alt+s)").pack(anchor=tk.W, pady=(8, 0))
+        self.stop_hotkey_var = tk.StringVar(value=str(self.config.get("stop_hotkey", "ctrl+alt+s")))
         ttk.Entry(extras, textvariable=self.stop_hotkey_var).pack(fill=tk.X, pady=2)
 
-        button_bar = ttk.Frame(frame)
-        button_bar.pack(fill=tk.X, padx=8, pady=10)
-        ttk.Button(button_bar, text="Save Settings", command=self.save_settings).pack(
-            side=tk.RIGHT, padx=4
-        )
-        ttk.Button(button_bar, text="Test LLM", command=self._test_llm).pack(
-            side=tk.RIGHT, padx=4
-        )
-        ttk.Button(button_bar, text="Test Screenshot", command=self._test_screenshot).pack(
-            side=tk.RIGHT, padx=4
+        ttk.Button(frame, text="Save Settings", command=self.save_settings).pack(
+            padx=8, pady=10, anchor=tk.E
         )
 
     def _build_provider_fields(self) -> None:
@@ -184,17 +123,13 @@ class AppGUI:
             child.destroy()
 
         provider = self.provider_var.get()
-        if provider.startswith("Ollama"):
+        if provider == "Ollama (Local)":
             ttk.Label(self.provider_container, text="Ollama Host").pack(anchor=tk.W)
             ttk.Entry(self.provider_container, textvariable=self.ollama_host_var).pack(
                 fill=tk.X, pady=2
             )
-            ttk.Label(self.provider_container, text="Ollama Text Model").pack(anchor=tk.W, pady=(6, 0))
-            ttk.Entry(self.provider_container, textvariable=self.ollama_text_model_var).pack(
-                fill=tk.X, pady=2
-            )
-            ttk.Label(self.provider_container, text="Ollama Vision Model").pack(anchor=tk.W, pady=(6, 0))
-            ttk.Entry(self.provider_container, textvariable=self.ollama_vision_model_var).pack(
+            ttk.Label(self.provider_container, text="Ollama Model").pack(anchor=tk.W, pady=(6, 0))
+            ttk.Entry(self.provider_container, textvariable=self.ollama_model_var).pack(
                 fill=tk.X, pady=2
             )
         else:
@@ -247,36 +182,19 @@ class AppGUI:
         self.config["dry_run"] = self.dry_run_var.get()
         save_config(self.config)
 
-    def _persist_confirm(self) -> None:
-        self.config["confirm_before_execute"] = self.confirm_var.get()
-        save_config(self.config)
-
-    def _persist_block_clicks(self) -> None:
-        self.config["block_clicks"] = self.block_clicks_var.get()
-        save_config(self.config)
-
-    def _persist_block_terminal(self) -> None:
-        self.config["block_terminal_typing"] = self.block_terminal_var.get()
-        save_config(self.config)
-
     def save_settings(self) -> None:
         self.config.update(
             {
-                "provider_mode": self.provider_var.get(),
+                "provider": self.provider_var.get(),
                 "ollama_host": self.ollama_host_var.get(),
-                "ollama_text_model": self.ollama_text_model_var.get(),
-                "ollama_vision_model": self.ollama_vision_model_var.get(),
+                "ollama_model": self.ollama_model_var.get(),
                 "openrouter_api_key": self.openrouter_key_var.get(),
                 "openrouter_model": self.openrouter_model_var.get(),
                 "openrouter_base_url": self.openrouter_base_var.get(),
-                "llm_timeout_seconds": self.timeout_var.get(),
                 "max_steps": self.max_steps_var.get(),
                 "delay_seconds": self.delay_var.get(),
                 "stop_hotkey": self.stop_hotkey_var.get(),
                 "dry_run": self.dry_run_var.get(),
-                "confirm_before_execute": self.confirm_var.get(),
-                "block_clicks": self.block_clicks_var.get(),
-                "block_terminal_typing": self.block_terminal_var.get(),
             }
         )
         save_config(self.config)
@@ -287,15 +205,10 @@ class AppGUI:
         self.save_settings()
         self._build_provider_fields()
 
-    def _test_llm(self) -> None:
-        self.save_settings()
-        self.test_llm_callback()
-
-    def _test_screenshot(self) -> None:
-        self.test_screenshot_callback()
-
     def log(self, message: str) -> None:
         self.log_text.configure(state=tk.NORMAL)
         self.log_text.insert(tk.END, message + "\n")
         self.log_text.see(tk.END)
         self.log_text.configure(state=tk.DISABLED)
+
+
